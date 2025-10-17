@@ -1,0 +1,29 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- script: echo K8S Cluster Using Terraform & Azure DevOps!
+  displayName: 'Run a one-line script'
+
+- task: DownloadSecureFile@1
+  name: publickey
+  inputs:
+    secureFile: 'azure_rsa.pub'
+
+- task: TerraformCLI@2
+  inputs:
+    command: 'init'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/azure/kubernetes/'
+    commandOptions: '-var client_id=$(client_id) -var client_secret=$(client_secret) -var ssh_public_key=$(publickey.secureFilePath)'
+    backendType: 'azurerm'
+    backendServiceArm: 'AZ-RM-SC'
+    ensureBackend: true
+    backendAzureRmResourceGroupName: 'terraform-state-rg'
+    backendAzureRmResourceGroupLocation: 'Central US'
+    backendAzureRmStorageAccountName: 'terraformtfstatefiles'
+    backendAzureRmContainerName: 'tfstate'
+    backendAzureRmKey: 'K8s-DevOps-Terraform.tfstate'
+    allowTelemetryCollection: false
