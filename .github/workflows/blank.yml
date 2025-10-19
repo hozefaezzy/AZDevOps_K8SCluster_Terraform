@@ -48,7 +48,6 @@ jobs:
             -backend-config="storage_account_name=terraformtfstatefiles" \
             -backend-config="container_name=tfstate" \
             -backend-config="key=K8s-DevOps-Terraform.tfstate" \
-            -lock-timeout=5m
 
       # Terraform Validate
       - name: Terraform Validate
