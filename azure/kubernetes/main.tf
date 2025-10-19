@@ -3,12 +3,18 @@ terraform {
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
-      client_id       = var.client_id   # ENVIRONMENT VARIABLE
-      client_secret   = var.client_secret # ENVIRONMENT VARIABLE
-      subscription_id = var.subscription_id
-      tenant_id       = var.tenant_id
     }
   }
+}
+
+provider "azurerm" {
+  features = {}
+
+  client_id       = var.client_id
+  client_secret   = var.client_secret
+  subscription_id = var.subscription_id
+  tenant_id       = var.tenant_id
+}
 
 resource "azurerm_resource_group" "resource_group" {
   name     = "${var.resource_group}_${var.environment}"
