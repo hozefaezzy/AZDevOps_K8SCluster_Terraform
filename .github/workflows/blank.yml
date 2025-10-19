@@ -1,0 +1,71 @@
+name: Terraform K8s Deploy to Azure (OIDC + Locked + Versioned)
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write    # Required for OIDC
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    name: Deploy Infrastructure via Terraform
+
+    env:
+      ARM_USE_OIDC: true
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      TF_VAR_location: "eastus"
+
+    steps:
+      # Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Setup Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      # Load SSH Public Key from GitHub Secret
+      - name: Load SSH Public Key from Secret
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/azure_rsa.pub
+          echo "Public key loaded at ~/.ssh/azure_rsa.pub"
+
+      # Terraform Init with Azure Blob backend (locking + versioning)
+      - name: Terraform Init
+        working-directory: ./azure/kubernetes
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=terraform-state-rg" \
+            -backend-config="storage_account_name=terraformtfstatefiles" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=K8s-DevOps-Terraform.tfstate" \
+            -backend-config="enable_versioning=true" \
+            -lock-timeout=5m
+
+      # Terraform Validate
+      - name: Terraform Validate
+        working-directory: ./azure/kubernetes
+        run: terraform validate
+
+      # Terraform Plan with state lock timeout
+      - name: Terraform Plan
+        working-directory: ./azure/kubernetes
+        run: |
+          terraform plan -out=tfplan \
+            -lock-timeout=5m \
+            -var "ssh_public_key=$(cat ~/.ssh/azure_rsa.pub)"
+
+      # Terraform Apply with state lock timeout
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        working-directory: ./azure/kubernetes
+        run: terraform apply -auto-approve -lock-timeout=5m tfplan
