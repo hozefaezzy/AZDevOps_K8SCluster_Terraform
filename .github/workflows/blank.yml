@@ -60,8 +60,6 @@ jobs:
         working-directory: ./azure/kubernetes
         run: |
           terraform plan -out=tfplan \
-        # -lock-timeout=5m \
-          # -var "ssh_public_key=$(cat ~/.ssh/azure_rsa.pub)"
             -var "ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}"
 
       # Terraform Apply with state lock timeout
