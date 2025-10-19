@@ -5,14 +5,18 @@ terraform {
       version = "~> 4.0"
     }
   }
+  backend "azurerm" {
+    resource_group_name  = "terraform-state-rg"
+    storage_account_name = "terraformtfstatefiles"
+    location             = "eastus"
+    container_name       = "tfstate"
+    key                  = "k8sterraform.tfstate"
+  }
 }
 
 provider "azurerm" {
-  features = {}
-  client_id       = var.client_id
-  client_secret   = var.client_secret
-  subscription_id = var.subscription_id
-  tenant_id       = var.tenant_id
+  features {}
+  # subscription_id = "92ce78f8-6db3-4a60-9fa7-3e9d8179e33e"
 }
 
 resource "azurerm_resource_group" "resource_group" {
